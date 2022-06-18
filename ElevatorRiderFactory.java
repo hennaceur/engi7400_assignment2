@@ -15,7 +15,7 @@ public class ElevatorRiderFactory extends Thread {
         int currFloor = x.nextInt(5);
         int destFloor = x.nextInt(5);
 
-        while (currFloor == destFloor) {
+        while (destFloor == currFloor) {
             destFloor = x.nextInt(5);
         }
 

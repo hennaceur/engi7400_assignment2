@@ -3,24 +3,19 @@ package mun.concurrent.assignment.two;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import java.util.function.Predicate;
 
 public class ElevatorArray {
-    static state[] states;
-    static int[] currFloor;
     static int numElevator;
-    static Semaphore[] ElevatorLocks;
+    static Elevator[] elevators;
 
     //Initialize a semaphore for each elevator with max capacity of people
-    public ElevatorArray(int NumberElevator, int maxCap) {
-        numElevator = NumberElevator;
-        states = new state[numElevator];
-        ElevatorLocks = new Semaphore[numElevator];
-        currFloor = new int[numElevator];
+    public ElevatorArray(int numberElevator, int maxCap) {
+        numElevator = numberElevator;
+        elevators = new Elevator[numberElevator];
 
         for (int i = 0; i < numElevator; i++) {
-            ElevatorLocks[i] = new Semaphore(maxCap, false);
-            states[i] = state.STATIONARY;
-            currFloor[i] = 0;
+            elevators[i] = new Elevator(maxCap);
         }
     }
 
@@ -28,13 +23,18 @@ public class ElevatorArray {
     public Semaphore acquireElevator(ElevatorRiderFactory rider) {
         for (int i = 0; i < numElevator; i++) {
             try {
-                boolean hasPermits = ElevatorLocks[i].tryAcquire(100, TimeUnit.MILLISECONDS);
+                boolean hasPermits = elevators[i].elevatorLock.tryAcquire(100, TimeUnit.MILLISECONDS); //deals with capacity
+                boolean isRightDirection = rider.directionRequested == elevators[i].currState || elevators[i].currState == state.STATIONARY;
+                boolean isClosestFloor = true;
+                boolean isNotHandled = true; // if another elevator already picked up rider
+                boolean isInRoute = true;
+
                 if (hasPermits) {
-                    if (rider.directionRequested == states[i] || states[i] == state.STATIONARY) {
-						states[i] = rider.directionRequested;
-						return ElevatorLocks[i];
+                    if (isRightDirection && isClosestFloor && isNotHandled && isInRoute) {
+						elevators[i].currState = rider.directionRequested;
+						return elevators[i].elevatorLock;
                     } else {
-                        ElevatorLocks[i].release(1);
+                        elevators[i].elevatorLock.release(1);
                     }
                 }
             } catch (Exception e) {
@@ -49,8 +49,8 @@ public class ElevatorArray {
     }
 
     public void releaseAll() {
-		for (Semaphore elevatorLock : ElevatorLocks) {
-			elevatorLock.release();
+		for (int i = 0; i < numElevator; i++) {
+            elevators[i].elevatorLock.release();
 		}
     }
 }
