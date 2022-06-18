@@ -1,6 +1,4 @@
-package mun.concurrent.assignment.two;
-import java.util.Scanner;
-import mun.concurrent.assignment.two.ElevatorSimulator;
+package src;
 
 public class CSFElevatorSimulator {
 
@@ -15,10 +13,10 @@ public class CSFElevatorSimulator {
 //		ElevatorSimulator largeElevatorSimulator = new ElevatorSimulator(2, 2, SimulationTime);
 		smallElevatorSimulator.run();
 //		largeElevatorSimulator.run();
-	
+
 		System.out.print("######################\n");
 		System.out.print("Simulation is complete!");
 		// reader.close();
 	}
 }
-:wq
+
