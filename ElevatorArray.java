@@ -18,12 +18,12 @@ public class ElevatorArray {
     public boolean acquireElevator(ElevatorRiderFactory rider) {
         for (int i = 0; i < numElevator; i++) {
             if (elevators[i].hasPermits()) {
-                boolean isRightDirection = rider.directionRequested == elevators[i].currState || elevators[i].currState == state.STATIONARY;
+                boolean isRightDirection = rider.request.direction == elevators[i].currState || elevators[i].currState == state.STATIONARY;
 
                 boolean meetsCriteria = isRightDirection && true;
                 if (meetsCriteria) {
                     elevators[i].givePermit();
-                    elevators[i].makeRequest(rider.currentFloor, rider.destinationFloor);
+                    elevators[i].makeRequest(rider.request);
                     return true;
                 }
             }

@@ -28,9 +28,8 @@ public class Elevator extends Thread {
         return false;
     }
 
-    public void makeRequest(int startFloor, int endFloor) {
-        requests.add(new Request(startFloor, endFloor));
-        currState = startFloor > endFloor ? state.DOWN : state.UP;
+    public void makeRequest(Request request) {
+        requests.add(request);
     }
 
     public void givePermit(){

@@ -4,9 +4,7 @@ import java.util.Random;
 
 public class ElevatorRiderFactory extends Thread {
 
-    public int currentFloor;
-    public int destinationFloor;
-    public state directionRequested;
+    public Request request;
 
     //Generates rider randomly to call from the 5 floors.
     public ElevatorRiderFactory() {
@@ -17,10 +15,7 @@ public class ElevatorRiderFactory extends Thread {
         while (destFloor == currFloor) {
             destFloor = x.nextInt(5);
         }
-
-        this.destinationFloor = destFloor;
-        this.currentFloor = currFloor;
-        this.directionRequested = currentFloor > this.destinationFloor ? state.DOWN : state.UP;
+        request = new Request(currFloor, destFloor);
     }
 
     //Logic when the rider presses the button.
@@ -30,9 +25,9 @@ public class ElevatorRiderFactory extends Thread {
         try {
             boolean gotElevator = elevators.acquireElevator(this);
             if (gotElevator) {
-                System.out.print("Going " + this.directionRequested + " from Floor " + (this.currentFloor + 1) + " to Floor " + (this.destinationFloor + 1) + "\n");
+                System.out.print("Going " + this.request.direction + " from Floor " + (this.request.startFloor + 1) + " to Floor " + (this.request.endFloor + 1) + "\n");
             } else {
-                System.out.print("Rejected: " + this.directionRequested + " from Floor " + (this.currentFloor + 1) + " to Floor " + (this.destinationFloor + 1) + "\n");
+                System.out.print("Rejected: " + this.request.direction + " from Floor " + (this.request.startFloor + 1) + " to Floor " + (this.request.endFloor + 1) + "\n");
                 return false;
             }
             return true;
