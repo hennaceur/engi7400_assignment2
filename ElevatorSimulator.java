@@ -51,12 +51,13 @@ public class ElevatorSimulator implements Runnable {
                 SimulationClock.tick();
                 elevatorClockTicked.signalAll();
 
-                ElevatorRiderFactory[] riders = new ElevatorRiderFactory[15];
-                for (int i = 0; i < 15; i++) {
+                int numRiders = 7;
+                ElevatorRiderFactory[] riders = new ElevatorRiderFactory[numRiders];
+                for (int i = 0; i < numRiders; i++) {
                     riders[i] = new ElevatorRiderFactory();
                     riders[i].start();
-                    var elevatorLockAcquired = riders[i].run(elevators);
-                    if (elevatorLockAcquired) {
+                    boolean elevatorAcquired = riders[i].run(elevators);
+                    if (elevatorAcquired) {
                         elevatorStats.IncrementAcceptedRiders();
                     } else {
                         elevatorStats.IncrementRejectedRiders();

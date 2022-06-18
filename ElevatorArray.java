@@ -1,10 +1,5 @@
 package mun.concurrent.assignment.two;
 
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.function.Predicate;
-
 public class ElevatorArray {
     static int numElevator;
     static Elevator[] elevators;
@@ -20,38 +15,26 @@ public class ElevatorArray {
     }
 
     //try to acquire an available elevator
-    public Semaphore acquireElevator(ElevatorRiderFactory rider) {
+    public boolean acquireElevator(ElevatorRiderFactory rider) {
         for (int i = 0; i < numElevator; i++) {
-            try {
-                boolean hasPermits = elevators[i].elevatorLock.tryAcquire(100, TimeUnit.MILLISECONDS); //deals with capacity
+            if (elevators[i].hasPermits()) {
                 boolean isRightDirection = rider.directionRequested == elevators[i].currState || elevators[i].currState == state.STATIONARY;
-                boolean isClosestFloor = true;
-                boolean isNotHandled = true; // if another elevator already picked up rider
-                boolean isInRoute = true;
 
-                if (hasPermits) {
-                    if (isRightDirection && isClosestFloor && isNotHandled && isInRoute) {
-						elevators[i].currState = rider.directionRequested;
-						return elevators[i].elevatorLock;
-                    } else {
-                        elevators[i].elevatorLock.release(1);
-                    }
+                boolean meetsCriteria = isRightDirection && true;
+                if (meetsCriteria) {
+                    elevators[i].givePermit();
+                    elevators[i].makeRequest(rider.currentFloor, rider.destinationFloor);
+                    return true;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
-        return null;
-    }
-
-    public void releaseRider(Semaphore elevatorLock) {
-		elevatorLock.release(1);
+        return false;
     }
 
     public void releaseAll() {
-		for (int i = 0; i < numElevator; i++) {
+        for (int i = 0; i < numElevator; i++) {
             elevators[i].elevatorLock.release();
-		}
+        }
     }
 }
 

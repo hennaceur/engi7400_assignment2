@@ -1,7 +1,6 @@
 package mun.concurrent.assignment.two;
 
 import java.util.Random;
-import java.util.concurrent.Semaphore;
 
 public class ElevatorRiderFactory extends Thread {
 
@@ -9,7 +8,7 @@ public class ElevatorRiderFactory extends Thread {
     public int destinationFloor;
     public state directionRequested;
 
-    //Generates rider randomlly to call from the 5 floors.
+    //Generates rider randomly to call from the 5 floors.
     public ElevatorRiderFactory() {
         Random x = new Random();
         int currFloor = x.nextInt(5);
@@ -29,8 +28,8 @@ public class ElevatorRiderFactory extends Thread {
     //otherwise, the rider is rejected
     public boolean run(ElevatorArray elevators) {
         try {
-            Semaphore elevator = elevators.acquireElevator(this);
-            if (elevator != null) {
+            boolean gotElevator = elevators.acquireElevator(this);
+            if (gotElevator) {
                 System.out.print("Going " + this.directionRequested + " from Floor " + (this.currentFloor + 1) + " to Floor " + (this.destinationFloor + 1) + "\n");
             } else {
                 System.out.print("Rejected: " + this.directionRequested + " from Floor " + (this.currentFloor + 1) + " to Floor " + (this.destinationFloor + 1) + "\n");
@@ -38,6 +37,7 @@ public class ElevatorRiderFactory extends Thread {
             }
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
