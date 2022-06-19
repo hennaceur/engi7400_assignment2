@@ -11,6 +11,7 @@ public class ElevatorArray {
 
         for (int i = 0; i < numElevator; i++) {
             elevators[i] = new Elevator(maxCap);
+            elevators[i].start();
         }
     }
 
@@ -19,9 +20,10 @@ public class ElevatorArray {
         for (int i = 0; i < numElevator; i++) {
             if (elevators[i].hasPermits()) {
                 boolean isRightDirection = rider.request.direction == elevators[i].currState || elevators[i].currState == state.STATIONARY;
+                boolean notFull = elevators[i].notFull();
+                boolean isValidPickUp = elevators[i].isEmpty() || elevators[i].enRoute(rider.request);
 
-                boolean meetsCriteria = isRightDirection && true;
-                if (meetsCriteria) {
+                if (isRightDirection && notFull && isValidPickUp) {
                     elevators[i].givePermit();
                     elevators[i].makeRequest(rider.request);
                     return true;
@@ -34,6 +36,7 @@ public class ElevatorArray {
     public void releaseAll() {
         for (int i = 0; i < numElevator; i++) {
             elevators[i].elevatorLock.release();
+            elevators[i].stop();
         }
     }
 }

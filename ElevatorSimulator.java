@@ -22,8 +22,6 @@ public class ElevatorSimulator implements Runnable {
 
     private ElevatorStats elevatorStats;    //keeps track of times required for riders to finish
 
-    private ElevatorRiderFactory elevatorRiderFactory;    //generates elevator riders at the appropriate time
-
     //Allocate synchronization variables
     ReentrantLock elevatorClockLock = new ReentrantLock();
 
@@ -46,23 +44,19 @@ public class ElevatorSimulator implements Runnable {
         // while in simulation
         while (SimulationClock.getTick() < simulationTime) {
             try {
-                Thread.sleep(50); // slow down program
+                Thread.sleep(500); // slow down program
                 elevatorClockLock.lockInterruptibly(); // Use lockInterruptibly so that thread doesn't get stuck waiting for lock
                 SimulationClock.tick();
                 elevatorClockTicked.signalAll();
 
-                int numRiders = 7;
-                ElevatorRiderFactory[] riders = new ElevatorRiderFactory[numRiders];
-                for (int i = 0; i < numRiders; i++) {
-                    riders[i] = new ElevatorRiderFactory();
-                    riders[i].start();
-                    boolean elevatorAcquired = riders[i].run(elevators);
-                    if (elevatorAcquired) {
-                        elevatorStats.IncrementAcceptedRiders();
-                    } else {
-                        elevatorStats.IncrementRejectedRiders();
-                    }
+                ElevatorRiderFactory rider = new ElevatorRiderFactory();
+                boolean elevatorAcquired = rider.run(elevators);
+                if (elevatorAcquired) {
+                    elevatorStats.IncrementAcceptedRiders();
+                } else {
+                    elevatorStats.IncrementRejectedRiders();
                 }
+
             } catch (InterruptedException ignored) {
             } finally {
                 elevatorClockLock.unlock();

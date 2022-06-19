@@ -15,7 +15,7 @@ public class ElevatorRiderFactory extends Thread {
         while (destFloor == currFloor) {
             destFloor = x.nextInt(5);
         }
-        request = new Request(currFloor, destFloor);
+        request = new Request(currFloor + 1, destFloor + 1);
     }
 
     //Logic when the rider presses the button.
@@ -25,9 +25,9 @@ public class ElevatorRiderFactory extends Thread {
         try {
             boolean gotElevator = elevators.acquireElevator(this);
             if (gotElevator) {
-                System.out.print("Going " + this.request.direction + " from Floor " + (this.request.startFloor + 1) + " to Floor " + (this.request.endFloor + 1) + "\n");
+                System.out.print("Going " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
             } else {
-                System.out.print("Rejected: " + this.request.direction + " from Floor " + (this.request.startFloor + 1) + " to Floor " + (this.request.endFloor + 1) + "\n");
+                System.out.print("Rejected: " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
                 return false;
             }
             return true;
