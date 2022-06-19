@@ -38,21 +38,23 @@ public class Elevator extends Thread {
         return false;
     }
 
-    public void makeRequest(Request request) {
+    public boolean makeRequest(Request request) {
         requests.add(request);
         currState = request.direction;
         visit.add(request.startFloor);
         visit.add(request.endFloor);
         try { visit = visit.stream().sorted().collect(Collectors.toSet()); } catch (Exception ignored) { }
         visitDrop.add(request.endFloor);
+        return true;
     }
 
-    public void givePermit() {
+    public boolean givePermit() {
         try {
-            elevatorLock.tryAcquire(100, TimeUnit.MILLISECONDS);
+            return elevatorLock.tryAcquire(100, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     private void releasePermit() {
@@ -88,16 +90,25 @@ public class Elevator extends Thread {
     }
 
     private void visitFloor() {
+        int sleepTime = 0;
         if (visit.contains(currFloor)) {
             totalTime += 15;
+            sleepTime = 150;
             if (visitDrop.contains(currFloor)){
                 requests.remove(0);
                 releasePermit();
                 visitDrop.remove(currFloor);
             }
             visit.remove(currFloor);
+
         } else {
             totalTime += 5;
+            sleepTime = 50;
+        }
+        try {
+            sleep(sleepTime);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

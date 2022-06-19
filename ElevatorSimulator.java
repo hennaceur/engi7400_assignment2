@@ -7,6 +7,7 @@ import mun.concurrent.assignment.two.ElevatorRiderFactory;
 import mun.concurrent.assignment.two.Clock;
 import mun.concurrent.assignment.two.state;
 
+import java.util.ArrayList;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.Semaphore;
 
@@ -40,16 +41,20 @@ public class ElevatorSimulator implements Runnable {
 
     public void run() {
         SimulationClock = new Clock();
+        elevators.run();
 
+        int i = 0;
+        int[] timeDelay = {200, 300, 400, 500, 600, 700, 800, 900, 1000};
         // while in simulation
         while (SimulationClock.getTick() < simulationTime) {
             try {
-                Thread.sleep(500); // slow down program
+                //Thread.sleep(50); // slow down program
                 elevatorClockLock.lockInterruptibly(); // Use lockInterruptibly so that thread doesn't get stuck waiting for lock
                 SimulationClock.tick();
                 elevatorClockTicked.signalAll();
-
+                i = i % 9;
                 ElevatorRiderFactory rider = new ElevatorRiderFactory();
+                Thread.sleep(timeDelay[i]);
                 boolean elevatorAcquired = rider.run(elevators);
                 if (elevatorAcquired) {
                     elevatorStats.IncrementAcceptedRiders();
@@ -60,11 +65,13 @@ public class ElevatorSimulator implements Runnable {
             } catch (InterruptedException ignored) {
             } finally {
                 elevatorClockLock.unlock();
-                elevators.releaseAll();
             }
+            i++;
         }
         // Output elevator stats
         elevatorStats.printStats();
         SimulationClock.reset();
+        elevators.releaseAll();
+        elevators.stop();
     }
 }

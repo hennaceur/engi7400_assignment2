@@ -44,8 +44,6 @@ public class ElevatorStats {
         return TotalSimulationTime;
     }
 
-
-
     public void printStats() {
         System.out.print("Total riders: " + ReturnTotalRequestedRiders() + "\n");
         System.out.print("Accepted riders: " + AcceptedRiders + "\n");

@@ -1,6 +1,6 @@
 package mun.concurrent.assignment.two;
 
-public class ElevatorArray {
+public class ElevatorArray extends Thread{
     static int numElevator;
     static Elevator[] elevators;
 
@@ -11,7 +11,6 @@ public class ElevatorArray {
 
         for (int i = 0; i < numElevator; i++) {
             elevators[i] = new Elevator(maxCap);
-            elevators[i].start();
         }
     }
 
@@ -24,13 +23,17 @@ public class ElevatorArray {
                 boolean isValidPickUp = elevators[i].isEmpty() || elevators[i].enRoute(rider.request);
 
                 if (isRightDirection && notFull && isValidPickUp) {
-                    elevators[i].givePermit();
-                    elevators[i].makeRequest(rider.request);
-                    return true;
+                    return elevators[i].givePermit() && elevators[i].makeRequest(rider.request);
                 }
             }
         }
         return false;
+    }
+
+    public void run() {
+        for (int i = 0; i < numElevator; i++) {
+            elevators[i].start();
+        }
     }
 
     public void releaseAll() {
