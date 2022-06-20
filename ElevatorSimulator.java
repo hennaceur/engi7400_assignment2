@@ -53,13 +53,18 @@ public class ElevatorSimulator implements Runnable {
                 SimulationClock.tick();
                 elevatorClockTicked.signalAll();
                 i = i % 9;
-                ElevatorRiderFactory rider = new ElevatorRiderFactory();
                 Thread.sleep(timeDelay[i]);
-                boolean elevatorAcquired = rider.run(elevators);
-                if (elevatorAcquired) {
-                    elevatorStats.IncrementAcceptedRiders();
-                } else {
-                    elevatorStats.IncrementRejectedRiders();
+
+                ElevatorRiderFactory[] rider = new ElevatorRiderFactory[10];
+
+                for (int j = 0; j < 1; j++){
+                    rider[j] = new ElevatorRiderFactory();
+                    boolean elevatorAcquired = rider[j].run(elevators);
+                    if (elevatorAcquired) {
+                        elevatorStats.IncrementAcceptedRiders();
+                    } else {
+                        elevatorStats.IncrementRejectedRiders();
+                    }
                 }
 
             } catch (InterruptedException ignored) {

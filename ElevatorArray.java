@@ -10,7 +10,7 @@ public class ElevatorArray extends Thread{
         elevators = new Elevator[numberElevator];
 
         for (int i = 0; i < numElevator; i++) {
-            elevators[i] = new Elevator(maxCap);
+            elevators[i] = new Elevator(maxCap, i+1);
         }
     }
 
@@ -18,7 +18,7 @@ public class ElevatorArray extends Thread{
     public boolean acquireElevator(ElevatorRiderFactory rider) {
         for (int i = 0; i < numElevator; i++) {
             if (elevators[i].hasPermits()) {
-                boolean isRightDirection = rider.request.direction == elevators[i].currState || elevators[i].currState == state.STATIONARY;
+                boolean isRightDirection = rider.request.direction == elevators[i].requestDirection || elevators[i].currState == state.STATIONARY;
                 boolean notFull = elevators[i].notFull();
                 boolean isValidPickUp = elevators[i].isEmpty() || elevators[i].enRoute(rider.request);
 
