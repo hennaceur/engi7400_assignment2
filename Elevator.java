@@ -1,33 +1,50 @@
+/**
+ * The Elevator class is a thread that runs an elevator
+ */
 package mun.concurrent.assignment.two;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
+
+/**
+ * The elevator class is a thread that moves up and down, and stops at each floor that has a request
+ */
 public class Elevator extends Thread {
-    public state currState;
-    public state requestDirection;
-    public Integer currFloor;
-    public Semaphore elevatorLock;
-    public Vector<Request> requests = new Vector<Request>();
-    public int maxCapacity;
-    public Set<Integer> visitDrop = new HashSet<Integer>();
-    public Set<Integer> visit = new HashSet<Integer>();
-    public int elevatorNum;
-    int totalTimeWithRider = 0;
-    boolean here = false;
+    public Direction requestedDirection;
+    public Direction currentDirection;
 
-    public Elevator(int maxCap, int elNum) {
+    public ElevatorState currentState;
+    public Integer currentFloor;
+
+    public Semaphore elevatorLock;
+    public Integer maxCapacity;
+    public Integer elevatorNumber;
+    public int totalTimeWithRider = 0;
+
+    private int timeBetweenFloors = 5_000/100;
+    private int timeToStop = 15_000/100;
+
+    public Vector<Request> requests = new Vector<Request>();
+    public Vector<Integer> visit = new Vector<Integer>();
+
+    public Elevator(int maxCap, int elevatorNum) {
         elevatorLock = new Semaphore(maxCap, false);
-        currState = state.STATIONARY;
-        currFloor = 1;
+        currentState = ElevatorState.IDLE;
+        currentFloor = 1;
         maxCapacity = maxCap;
-        elevatorNum = elNum;
+        elevatorNumber = elevatorNum;
+        currentDirection = Direction.UP;
     }
 
+    /**
+     * If the elevator is available, return true, otherwise return false.
+     *
+     * @return A boolean value that indicates whether the elevator is available.
+     */
     public boolean hasPermits() {
         try {
             boolean has = elevatorLock.tryAcquire(100, TimeUnit.MILLISECONDS);
@@ -41,16 +58,55 @@ public class Elevator extends Thread {
         return false;
     }
 
+    /**
+     * > This function adds the request to the requests list, sets the requestDirection to the direction of the request,
+     * adds the start and end floors of the request to the visit list, sorts the visit list, and adds the end floor of the
+     * request to the visitDrop list
+     *
+     * @param request the request that is being made
+     * @return A boolean value.
+     */
     public boolean makeRequest(Request request) {
         requests.add(request);
-        requestDirection = request.direction;
         visit.add(request.startFloor);
         visit.add(request.endFloor);
-        try { visit = visit.stream().sorted().collect(Collectors.toSet()); } catch (Exception ignored) { }
-        visitDrop.add(request.endFloor);
+        requestedDirection = request.direction;
+        visit = orderList(visit, requestedDirection);
         return true;
     }
 
+    /**
+     * This function takes in a vector of integers and a direction, and returns a vector of integers in the order that the
+     * elevator should visit the floors
+     *
+     * @param visitFloors a vector of integers that represent the floors that the elevator needs to visit.
+     * @param direction the direction of the elevator
+     * @return A vector of integers.
+     */
+    private @NotNull Vector<Integer> orderList(Vector<Integer> visitFloors, Direction direction){
+        Vector<Integer> orderedResult = new Vector<Integer>();
+        if (direction == Direction.DOWN){
+            for(int i = 5; i > 0; i --) {
+                if (visitFloors.contains(i)){
+                    orderedResult.add(i);
+                }
+            }
+        } else if (direction == Direction.UP) {
+            for(int i = 1; i < 6; i ++) {
+                if (visitFloors.contains(i)){
+                    orderedResult.add(i);
+                }
+            }
+        }
+        return orderedResult;
+    }
+
+    /**
+     * If the elevatorLock is available, acquire it and return true. If it's not available, wait 100 milliseconds and try
+     * again. If it's still not available, return false.
+     *
+     * @return A boolean value.
+     */
     public boolean givePermit() {
         try {
             return elevatorLock.tryAcquire(100, TimeUnit.MILLISECONDS);
@@ -60,133 +116,141 @@ public class Elevator extends Thread {
         return false;
     }
 
+    /**
+     * Release the permit for the elevator lock.
+     */
     private void releasePermit() {
         elevatorLock.release(1);
     }
 
-    public boolean isEmpty(){
+    /**
+     * Returns true if the queue is empty, false otherwise.
+     *
+     * @return The size of the requests arraylist.
+     */
+    public boolean isEmpty() {
         return requests.size() == 0;
     }
 
-    public boolean notFull(){
+    /**
+     * Returns true if the number of requests is less than the max capacity
+     *
+     * @return The boolean value of whether the size of the requests list is less than the maxCapacity.
+     */
+    public boolean notFull() {
         return requests.size() < maxCapacity;
     }
 
+    /**
+     * If the elevator is going up, it is en route to a floor if it is currently below the floor of the pending request. If
+     * the elevator is going down, it is en route to a floor if it is currently above the floor of the pending request
+     *
+     * @param pendingRequest The request that is being checked to see if it is en route.
+     * @return A boolean value.
+     */
     public boolean enRoute(Request pendingRequest) {
-        switch (pendingRequest.direction) {
-            case UP: return currFloor <= pendingRequest.startFloor;
-            case DOWN: return currFloor >= pendingRequest.startFloor;
-            default: return false;
+        if (requests.size() > 0){
+            switch (pendingRequest.direction) {
+                case UP:
+                    return pendingRequest.startFloor >= requests.elementAt(0).startFloor && pendingRequest.startFloor <= requests.elementAt(0).endFloor;
+                case DOWN:
+                    return pendingRequest.startFloor <= requests.elementAt(0).startFloor && pendingRequest.startFloor >= requests.elementAt(0).endFloor;
+                default:
+                    return false;
+            }
         }
+        return true;
     }
 
+    /**
+     * If the current floor is greater than 1, decrement the current floor and set the current state to DOWN. Otherwise,
+     * set the current state to UP
+     */
     private void decrementFloor() {
-        if (currFloor > 1){
-            currFloor--;
-            this.currState = state.DOWN;
-        }
-        else {
-            this.currState = state.UP;
+        if (currentFloor > 1) {
+            currentFloor--;
+            this.currentDirection = Direction.DOWN;
+            try { sleep(timeBetweenFloors); } catch (InterruptedException ignored) { }
+        } else {
+            this.currentDirection = Direction.UP;
         }
     }
 
+    /**
+     * If the current floor is less than 5, increment the current floor and set the current state to UP. Otherwise, set the
+     * current state to DOWN
+     */
     private void incrementFloor() {
-        if (currFloor < 5){
-            currFloor++;
-            this.currState = state.UP;
-        }
-        else {
-            this.currState = state.DOWN;
+        if (currentFloor < 5) {
+            currentFloor++;
+            this.currentDirection = Direction.UP;
+            try { sleep(timeBetweenFloors); } catch (InterruptedException ignored) { }
+        } else {
+            this.currentDirection = Direction.DOWN;
         }
     }
 
-    private void visitFloor() {
-        int sleepTime = 0;
-        if (visit.contains(currFloor)) {
+    private void holdAndRelease() {
+        if (visit.contains(currentFloor)){
+            // This only works with a max capacity of 1 or 2
+            for(int i = 0; i < requests.size(); i++){
+                if (requests.elementAt(i).endFloor == currentFloor){
+                    requests.remove(i);
+                    releasePermit();
+                }
+            }
             totalTimeWithRider += 15;
-            sleepTime = 15000;
-            if (visitDrop.contains(currFloor)){
-                requests.remove(0);
-                releasePermit();
-                visitDrop.remove(currFloor);
-            }
-            visit.remove(currFloor);
-        } else {
-            totalTimeWithRider += 5;
-            sleepTime = 5000;
+            visit.remove(currentFloor);
+            try { sleep(timeToStop); } catch (InterruptedException ignored) { }
         }
-        try {
-            sleep(sleepTime/100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
-    private void traverseFloor() {
-        try {
-            sleep(50);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void caseForUp() {
-        if (currFloor > requests.elementAt(0).startFloor && !here) {
+    private void moveFloor() {
+        totalTimeWithRider += 5;
+        if (currentDirection == Direction.DOWN) {
             decrementFloor();
-            traverseFloor();
-            if (currFloor == requests.elementAt(0).startFloor) {
-                here = true;
-            }
-        } else {
-            if (currFloor == requests.elementAt(0).startFloor) {
-                here = true;
-            }
-            visitFloor();
+        } else if (currentDirection == Direction.UP) {
             incrementFloor();
         }
     }
 
-    private void caseForDown() {
-        if (currFloor < requests.elementAt(0).startFloor && !here) {
-            incrementFloor();
-            traverseFloor();
-            if (currFloor == requests.elementAt(0).startFloor) {
-                here = true;
-            }
-        } else {
-            if (currFloor == requests.elementAt(0).startFloor) {
-                here = true;
-            }
-            visitFloor();
-            decrementFloor();
-        }
-    }
-
+    /**
+     * Prints the current state of the elevator
+     */
     private void printState() {
-        System.out.print("Elevator " + elevatorNum + " is currently at Floor " + currFloor + " moving " + currState + "\n" + visit.toString() + "\n");
+        System.out.print("Elevator " + elevatorNumber + " is currently at Floor " + currentFloor + " " + currentState + " " + currentDirection + "\n" + visit.toString() + " Total Time: " +
+                totalTimeWithRider + "\n");
     }
 
+    /**
+     * The elevator will move up or down depending on the request direction, and will stop at each floor that has a request
+     */
     public void run() {
         while (true) {
             try {
                 while (!isEmpty()) {
-                    here = false;
-                    while (!visit.isEmpty()) {
-//                        printState();
-                        switch (requestDirection) {
-                            case UP:
-                                caseForUp();
-                                break;
-                            case DOWN:
-                                caseForDown();
-                                break;
-                            default:
-                                break;
+                    currentState = ElevatorState.MOVING;
+
+                    // Get to start floor
+                    while (currentFloor != requests.elementAt(0).startFloor){
+                        if (currentFloor > requests.elementAt(0).startFloor) {
+                            decrementFloor();
+                        } else {
+                            incrementFloor();
                         }
+                        printState();
+                    }
+
+                    // once at start floor traverse list of visit floors
+                    while (!visit.isEmpty()){
+                        holdAndRelease();
+                        moveFloor();
+                        printState();
                     }
                 }
             } catch (Exception ignored) { }
-            this.currState = state.STATIONARY;
+            this.currentState = ElevatorState.IDLE;
         }
     }
 }

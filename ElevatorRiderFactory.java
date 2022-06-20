@@ -2,6 +2,9 @@ package mun.concurrent.assignment.two;
 
 import java.util.Random;
 
+/**
+ * The ElevatorRiderFactory class generates a random request for an elevator and tries to acquire an elevator
+ */
 public class ElevatorRiderFactory extends Thread {
 
     public Request request;
@@ -18,16 +21,19 @@ public class ElevatorRiderFactory extends Thread {
         request = new Request(currFloor + 1, destFloor + 1);
     }
 
-    //Logic when the rider presses the button.
-    //The rider tries to acquire a lock for the elevator if available
-    //otherwise, the rider is rejected
+    /**
+     * If the elevator is available, then the elevator will be acquired and the request will be processed
+     *
+     * @param elevators The ElevatorArray object that contains all the elevators.
+     * @return A boolean value.
+     */
     public boolean run(ElevatorArray elevators) {
         try {
             boolean gotElevator = elevators.acquireElevator(this);
             if (gotElevator) {
-//                System.out.print("Going " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
+                System.out.print("Going " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
             } else {
-//                System.out.print("Rejected: " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
+                System.out.print("Rejected: " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
                 return false;
             }
             return true;

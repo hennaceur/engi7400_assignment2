@@ -1,25 +1,25 @@
 package mun.concurrent.assignment.two;
 
+/**
+ * The Clock class keeps track of the current tick.
+ */
 public class Clock {
 
-	private int curtick;
-	
-	public Clock()
-	{
-		curtick = 0;
-	}
-	
-	public void tick()
-	{
-		curtick++;
-	}
-	
-	public int getTick()
-	{
-		return curtick;
-	}
-	
-	public void reset() {
-		curtick = 0;
-	}
+    private int curtick;
+
+    public Clock() {
+        curtick = 0;
+    }
+
+    public void tick() {
+        curtick++;
+    }
+
+    public int getTick() {
+        return curtick;
+    }
+
+    public void reset() {
+        curtick = 0;
+    }
 }

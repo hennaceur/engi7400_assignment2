@@ -1,8 +1,7 @@
 package mun.concurrent.assignment.two;
 
-public enum state {
+public enum Direction {
     UP,
-    DOWN,
-    STATIONARY
+    DOWN
 }
 
