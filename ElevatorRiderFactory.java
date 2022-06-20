@@ -25,9 +25,9 @@ public class ElevatorRiderFactory extends Thread {
         try {
             boolean gotElevator = elevators.acquireElevator(this);
             if (gotElevator) {
-                System.out.print("Going " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
+//                System.out.print("Going " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
             } else {
-                System.out.print("Rejected: " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
+//                System.out.print("Rejected: " + this.request.direction + " from Floor " + this.request.startFloor + " to Floor " + this.request.endFloor + "\n");
                 return false;
             }
             return true;

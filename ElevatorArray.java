@@ -14,6 +14,14 @@ public class ElevatorArray extends Thread{
         }
     }
 
+    public int getTravelTime() {
+        int totalTime = 0;
+        for (Elevator elevator : elevators) {
+            totalTime += elevator.totalTimeWithRider;
+        }
+        return totalTime;
+    }
+
     //try to acquire an available elevator
     public boolean acquireElevator(ElevatorRiderFactory rider) {
         for (int i = 0; i < numElevator; i++) {
@@ -30,16 +38,16 @@ public class ElevatorArray extends Thread{
         return false;
     }
 
-    public void run() {
-        for (int i = 0; i < numElevator; i++) {
-            elevators[i].start();
-        }
-    }
-
     public void releaseAll() {
         for (int i = 0; i < numElevator; i++) {
             elevators[i].elevatorLock.release();
             elevators[i].stop();
+        }
+    }
+
+    public void run() {
+        for (int i = 0; i < numElevator; i++) {
+            elevators[i].start();
         }
     }
 }

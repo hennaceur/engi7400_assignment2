@@ -1,20 +1,12 @@
 package mun.concurrent.assignment.two;
 
-import mun.concurrent.assignment.two.ElevatorStats;
-import mun.concurrent.assignment.two.ElevatorRiderFactory;
-import mun.concurrent.assignment.two.ElevatorArray;
-import mun.concurrent.assignment.two.ElevatorRiderFactory;
-import mun.concurrent.assignment.two.Clock;
-import mun.concurrent.assignment.two.state;
-
-import java.util.ArrayList;
 import java.util.concurrent.locks.*;
-import java.util.concurrent.Semaphore;
 
 public class ElevatorSimulator implements Runnable {
 
     private static Clock SimulationClock;
     private static ElevatorArray elevators;        //handles scheduling/matching of elevators
+    private static ElevatorRiderFactory[] riders;
 
     private final int numElevators;
     private final int elevatorCapacity;
@@ -25,9 +17,6 @@ public class ElevatorSimulator implements Runnable {
 
     //Allocate synchronization variables
     ReentrantLock elevatorClockLock = new ReentrantLock();
-
-    ReentrantLock elevatorLock = new ReentrantLock();
-
     Condition elevatorClockTicked = elevatorClockLock.newCondition();
 
     // Constructor
@@ -37,33 +26,40 @@ public class ElevatorSimulator implements Runnable {
         this.simulationTime = simulationTime;
         elevators = new ElevatorArray(numElevators, elevatorCapacity);
         elevatorStats = new ElevatorStats();
+        riders = new ElevatorRiderFactory[500];
+        for(int i = 0; i < 500; i++) {
+            riders[i] = new ElevatorRiderFactory();
+        }
     }
 
     public void run() {
         SimulationClock = new Clock();
-        elevators.run();
+        elevators.start();
 
-        int i = 0;
-        int[] timeDelay = {200, 300, 400, 500, 600, 700, 800, 900, 1000};
+        int inc = 20;
+        int whichRider = 0;
         // while in simulation
         while (SimulationClock.getTick() < simulationTime) {
             try {
-                //Thread.sleep(50); // slow down program
+                Thread.sleep(10); // per tick (~1 second)
                 elevatorClockLock.lockInterruptibly(); // Use lockInterruptibly so that thread doesn't get stuck waiting for lock
                 SimulationClock.tick();
                 elevatorClockTicked.signalAll();
-                i = i % 9;
-                Thread.sleep(timeDelay[i]);
 
-                ElevatorRiderFactory[] rider = new ElevatorRiderFactory[10];
-
-                for (int j = 0; j < 1; j++){
-                    rider[j] = new ElevatorRiderFactory();
-                    boolean elevatorAcquired = rider[j].run(elevators);
+                if (SimulationClock.getTick() % 121 == inc){
+                    boolean elevatorAcquired = riders[whichRider].run(elevators);
+                    // Check weather rejected and increment accordingly
                     if (elevatorAcquired) {
                         elevatorStats.IncrementAcceptedRiders();
                     } else {
                         elevatorStats.IncrementRejectedRiders();
+                    }
+                    whichRider++;
+
+                    if (inc == 120) {
+                        inc = 20;
+                    } else {
+                        inc += 20;
                     }
                 }
 
@@ -71,10 +67,9 @@ public class ElevatorSimulator implements Runnable {
             } finally {
                 elevatorClockLock.unlock();
             }
-            i++;
         }
         // Output elevator stats
-        elevatorStats.printStats();
+        elevatorStats.getStats(elevators);
         SimulationClock.reset();
         elevators.releaseAll();
         elevators.stop();

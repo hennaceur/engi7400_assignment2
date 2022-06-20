@@ -17,7 +17,8 @@ public class Elevator extends Thread {
     public Set<Integer> visitDrop = new HashSet<Integer>();
     public Set<Integer> visit = new HashSet<Integer>();
     public int elevatorNum;
-    int totalTime = 0;
+    int totalTimeWithRider = 0;
+    boolean here = false;
 
     public Elevator(int maxCap, int elNum) {
         elevatorLock = new Semaphore(maxCap, false);
@@ -102,8 +103,8 @@ public class Elevator extends Thread {
     private void visitFloor() {
         int sleepTime = 0;
         if (visit.contains(currFloor)) {
-            totalTime += 15;
-            sleepTime = 150;
+            totalTimeWithRider += 15;
+            sleepTime = 15000;
             if (visitDrop.contains(currFloor)){
                 requests.remove(0);
                 releasePermit();
@@ -111,18 +112,17 @@ public class Elevator extends Thread {
             }
             visit.remove(currFloor);
         } else {
-            totalTime += 5;
-            sleepTime = 50;
+            totalTimeWithRider += 5;
+            sleepTime = 5000;
         }
         try {
-            sleep(sleepTime);
+            sleep(sleepTime/100);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void traverseFloor() {
-        totalTime += 5;
         try {
             sleep(50);
         } catch (InterruptedException e) {
@@ -130,55 +130,62 @@ public class Elevator extends Thread {
         }
     }
 
+    private void caseForUp() {
+        if (currFloor > requests.elementAt(0).startFloor && !here) {
+            decrementFloor();
+            traverseFloor();
+            if (currFloor == requests.elementAt(0).startFloor) {
+                here = true;
+            }
+        } else {
+            if (currFloor == requests.elementAt(0).startFloor) {
+                here = true;
+            }
+            visitFloor();
+            incrementFloor();
+        }
+    }
+
+    private void caseForDown() {
+        if (currFloor < requests.elementAt(0).startFloor && !here) {
+            incrementFloor();
+            traverseFloor();
+            if (currFloor == requests.elementAt(0).startFloor) {
+                here = true;
+            }
+        } else {
+            if (currFloor == requests.elementAt(0).startFloor) {
+                here = true;
+            }
+            visitFloor();
+            decrementFloor();
+        }
+    }
+
+    private void printState() {
+        System.out.print("Elevator " + elevatorNum + " is currently at Floor " + currFloor + " moving " + currState + "\n" + visit.toString() + "\n");
+    }
+
     public void run() {
         while (true) {
             try {
                 while (!isEmpty()) {
-                    boolean here = false;
+                    here = false;
                     while (!visit.isEmpty()) {
-//                    System.out.print("Elevator " + elevatorNum + " is currently at Floor " + currFloor + " moving " + currState + "\n" + visit.toString() + "\n");
+//                        printState();
                         switch (requestDirection) {
                             case UP:
-                                if (currFloor > requests.elementAt(0).startFloor && !here) {
-                                    decrementFloor();
-                                    traverseFloor();
-                                    if (currFloor == requests.elementAt(0).startFloor) {
-                                        here = true;
-                                    }
-                                } else {
-                                    if (currFloor == requests.elementAt(0).startFloor) {
-                                        here = true;
-                                    }
-                                    visitFloor();
-                                    incrementFloor();
-                                }
+                                caseForUp();
                                 break;
                             case DOWN:
-                                if (currFloor < requests.elementAt(0).startFloor && !here) {
-                                    incrementFloor();
-                                    traverseFloor();
-                                    if (currFloor == requests.elementAt(0).startFloor) {
-                                        here = true;
-                                    }
-                                } else {
-                                    if (currFloor == requests.elementAt(0).startFloor) {
-                                        here = true;
-                                    }
-                                    visitFloor();
-                                    decrementFloor();
-                                }
-
+                                caseForDown();
                                 break;
                             default:
                                 break;
                         }
                     }
-
                 }
-            } catch (Exception ignored) {
-
-            }
-//            System.out.print("Elevator " + elevatorNum + " is currently at Floor " + currFloor + " - stationary\n");
+            } catch (Exception ignored) { }
             this.currState = state.STATIONARY;
         }
     }
